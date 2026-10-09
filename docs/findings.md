@@ -75,3 +75,39 @@ Agent scoping is deliberately last. Nothing below has been run end to end in a c
 - **Slugs are not guaranteed.** Lightdash may append a suffix to the requested slug, so the returned link, not the requested slug, is the reference.
 - **Cleanup is manual.** The spike creates charts but does not delete them. One test chart (`Spike: avg dbt execution time by run status`) is in the sandbox space.
 - **Saving does not answer "how does a saved chart reach the dashboard builder in the support site"** (an open question on the Notion page). It lands in Lightdash and needs a separate path into the support site.
+
+## Agent context experiment (can the agent know enough about the data?)
+
+Joe's diagnosis: our agent writes queries with little knowledge of what metrics and tables exist. The Lightdash assistant suggested configuring a Lightdash agent (`route_agent`) or using the agents REST API. Neither is available on KTL: `list_agents` returns `Copilot is not enabled` and `route_agent` returns `No accessible AI agents are available`; the REST agent methods are behind the same `AiCopilot` flag. The assistant also named `find_fields`/`find_explores`; KTL has neither (the tool is `grep_fields`).
+
+What is available over MCP: a published `lightdash-analyst` prompt (1.9 KB) and `get_metadata`. The method: 10 fixed questions (`src/.../evaluation.py`, `scripts/eval_questions.py`), one run each, results in `docs/eval/*.json`. The mechanical checks only catch obvious failures; metric correctness was judged by reading the printed queries.
+
+| Run | Change | Mechanical pass | Tokens | What actually changed |
+|---|---|---|---|---|
+| `baseline` | none | 6/10 | 413K | Agent used only `grep_fields`+`run_query`. |
+| `discovery` | server prompt + `describe_explore`/`describe_fields` | 6/10 | 468K | Metric choice now follows metric descriptions. Headline unchanged. |
+| `filters` | typed filters in `QuerySpec`, `lookup_values`, "ask when vague" rule | 8/10 | 398K | Time windows now applied; vague question declined. Two answers still wrong on reading (below). |
+
+**What discovery fixed (stable across 3 repeats):**
+- `single-value` ("how many active supply points") now consistently picks `fact_cost_per_supply_point_monthly` (2,093,569,283). Baseline used a *weekly* pre-aggregated metric (9.04B). The metric's own description says it "cannot be rolled up or broken down further into finer timeframes" - text the agent never saw before.
+- "Yesterday" is now declined honestly instead of answered with a weekly figure labelled as yesterday. (The first scorecard marked this FAIL because the case expectation was wrong, not the agent.)
+- Every answerable case now reads metadata before querying.
+
+**What it did not fix:**
+- **Time filters.** `QuerySpec` has no `filters`, so "last 7 days" still returns all-time (500 rows). Needs the filter work.
+- **Vague questions are still guessed at, unstably.** "How are we doing?" ran a query in 2 of 3 repeats, against a different explore each time (messaging, warehouse performance). The server prompt says "if ambiguous, ask the user, never guess", but our output type has no clarifying-question path.
+
+**Cost:** +13% tokens for the extra metadata calls.
+
+**Caveat:** one sample per case. Only 3 cases were repeated, so the other results could be noise.
+
+**Filters + clarifying rule (`filters` run):**
+- `relative-date` ("last 7 days, by day") now returns 8 rows dated 2026-10-02..10-09 (baseline: 500 rows of all-time data). KTL accepts the *object* filter shape (`fieldId`, `fieldType`, `fieldFilterType`, `operator`, `values`, `settings`); the `filter-expressions` skill describes a string mode that this instance rejects (`expected array, received string`), so following the skill would have produced broken filters.
+- "How are we doing?" now declines with no tool calls (1.7K tokens vs 33K) instead of running a query.
+- Tokens fell to 398K because declined/filtered cases are cheaper.
+
+**The mechanical score overstates quality - two answers are wrong when read:**
+- `yesterday` (FAIL, correctly): the agent found a real daily explore but used `average_active_supply_points`, described as "average per day/fabric", and presented 1,535,117.63 as "active supply points across all clients". That is an average per fabric, not a total. Discovery tells the agent the grain, not whether the *aggregation* matches the question. Open problem.
+- `ambiguous` (PASS): it declined correctly but offered "Revenue trend / Orders volume / Conversion rate". `grep_fields` finds no `orders` or `conversion` fields in the project, and `revenue` only matches a narrow VEE metric. The options were invented, not looked up.
+
+**Where agent-context stands:** discovery + filters fixed metric grain and time windows. Still open: aggregation mismatches, and invented follow-up/clarification options. Not tested: the raw pass-through option (D) and a configured Lightdash agent (blocked, Copilot off).

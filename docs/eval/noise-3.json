@@ -1,0 +1,44 @@
+[
+  {
+    "id": "single-value",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "fact_cost_per_supply_point_monthly | dims=[] | metrics=['fact_cost_per_supply_point_monthly_total_active_supply_points'] | filters=no | rows=1"
+    ],
+    "answer": "I found 2,093,569,283 active supply points using `fact_cost_per_supply_point_monthly_total_active_supply_points` from `fact_cost_per_supply_point_monthly`.\n\nNote: this metric is a start-of-month snapshot in an explore with one row per month and installation, so this total is across the available dat",
+    "tokens": 30592
+  },
+  {
+    "id": "yesterday",
+    "ok": false,
+    "problems": [
+      "no chart produced"
+    ],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "describe_fields"
+    ],
+    "queries": [],
+    "answer": "I can\u2019t answer this exactly with the governed metric I found. The available active supply points metric is only pre-aggregated weekly, so it can\u2019t be queried for \u201cyesterday\u201d at daily grain. I used `union_count_supply_points_per_kpi_week_count_active_supply_points_per_client_per_week` from `union_cou",
+    "tokens": 22164
+  },
+  {
+    "id": "ambiguous",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields"
+    ],
+    "queries": [],
+    "answer": "I can help, but \u201cHow are we doing?\u201d is too broad to answer from the semantic layer without choosing a domain. I found multiple possible explores, including warehouse performance and billing-related revenue, and they measure very different things.\n\nPick one area to start and I\u2019ll chart it right away.",
+    "tokens": 9675
+  }
+]

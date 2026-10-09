@@ -1,0 +1,161 @@
+[
+  {
+    "id": "known-good",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "find_fields",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "fct_dbt_runs | dims=['fct_dbt_runs_dbt_run_status'] | metrics=['fct_dbt_runs_avg_execution_time'] | filters=no | rows=7"
+    ],
+    "answer": "I used the `fct_dbt_runs` explore and grouped the `Avg Execution Time in seconds` metric by `Dbt run status`.\n\nThe longest average execution time is for `partial success`, followed by `fail`, while `success` is lower. The full chart and table are shown above.",
+    "tokens": 49438
+  },
+  {
+    "id": "single-value",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "fact_cost_per_supply_point_monthly | dims=[] | metrics=['fact_cost_per_supply_point_monthly_total_active_supply_points'] | filters=no | rows=1"
+    ],
+    "answer": "There are 2,093,569,283 active supply points in the metric I found.\n\nNote: this metric comes from `fact_cost_per_supply_point_monthly`, where one row is per month and installation, and the metric is a start-of-month snapshot. Because your question didn\u2019t specify a time period, this total is across t",
+    "tokens": 33261
+  },
+  {
+    "id": "relative-date",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "find_fields",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "fct_dbt_runs | dims=['fct_dbt_runs_created_at_day'] | metrics=['fct_dbt_runs_count_errored_runs'] | filters=yes | rows=8"
+    ],
+    "answer": "I pulled failed or errored dbt runs from `fct_dbt_runs` and grouped them by `Created at day` for the last 7 days. The chart shows the daily counts across that window.",
+    "tokens": 50524
+  },
+  {
+    "id": "yesterday",
+    "ok": false,
+    "problems": [
+      "answered an unanswerable question"
+    ],
+    "tools": [
+      "find_fields",
+      "find_fields",
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "union_cost_model_features_per_day | dims=[] | metrics=['union_cost_model_features_per_day_average_active_supply_points'] | filters=yes | rows=1"
+    ],
+    "answer": "Yesterday\u2019s active supply points across all clients was 1,535,117.63.\n\nI used the `union_cost_model_features_per_day` explore, which is one row per day and client, with the `Average active supply points` metric filtered to yesterday. Note this metric is defined as an average active supply points per",
+    "tokens": 77813
+  },
+  {
+    "id": "time-series",
+    "ok": false,
+    "problems": [
+      "no chart produced"
+    ],
+    "tools": [
+      "find_fields",
+      "find_fields",
+      "describe_explore",
+      "describe_fields"
+    ],
+    "queries": [],
+    "answer": "I can\u2019t show this weekly from the available supply-point metric. The governed explore I found is `fact_cost_per_supply_point_monthly`, and its grain is one row per month and installation. Its `Total active supply points` metric is a start-of-month snapshot, so breaking it out by week over the last 8",
+    "tokens": 51819
+  },
+  {
+    "id": "by-client",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "fct_dbt_runs | dims=['fct_dbt_runs_client'] | metrics=['fct_dbt_runs_count_errored_runs'] | filters=no | rows=20"
+    ],
+    "answer": "I ranked clients by the metric **Count Errored or Failed Runs** from `fct_dbt_runs`.\n\nThe biggest counts are led by **talktalk-kap-prod**, **origin-data-prod**, and **championenergy-kap-prod**. The chart shows the top 20 clients sorted highest to lowest.\n\nNote: this metric is **all-time** unless we ",
+    "tokens": 33838
+  },
+  {
+    "id": "different-domain",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "union_avg_inbound_call_wait_time_weekly | dims=['union_avg_inbound_call_wait_time_weekly_week_start_date'] | metrics=['union_avg_inbound_call_wait_time_weekly_unweighted_avg_inbound_queue_wait_time'] | filters=no | rows=91"
+    ],
+    "answer": "Here\u2019s the weekly trend for average inbound call wait time.\n\nI used the `union_avg_inbound_call_wait_time_weekly` explore and the metric `Unweighted average inbound queue wait time (seconds)`, which gives the cross-client weekly average and is already defined at weekly grain.",
+    "tokens": 61400
+  },
+  {
+    "id": "follow-up",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "fct_dbt_runs | dims=['fct_dbt_runs_dbt_run_status'] | metrics=['fct_dbt_runs_avg_execution_time'] | filters=no | rows=7",
+      "fct_dbt_runs | dims=['fct_dbt_runs_created_at_month', 'fct_dbt_runs_dbt_run_status'] | metrics=['fct_dbt_runs_avg_execution_time'] | filters=no | rows=156"
+    ],
+    "answer": "Done \u2014 I split the chart by creation month while keeping run status in the breakdown. You should now see monthly patterns in average execution time across each status.",
+    "tokens": 33778
+  },
+  {
+    "id": "unanswerable",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields"
+    ],
+    "queries": [],
+    "answer": "I can\u2019t find any explore or governed metric related to unicorn shipments or Mars, so there\u2019s no data source here that can answer that literally.",
+    "tokens": 4497
+  },
+  {
+    "id": "ambiguous",
+    "ok": true,
+    "problems": [],
+    "tools": [],
+    "queries": [],
+    "answer": "That\u2019s a bit broad to answer with a single metric. Pick an area and I\u2019ll chart it.\n\nOptions:\n- Revenue trend\n- Orders volume\n- Conversion rate",
+    "tokens": 1658
+  }
+]

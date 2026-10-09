@@ -1,0 +1,13 @@
+[
+  {
+    "id": "ambiguous",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields"
+    ],
+    "queries": [],
+    "answer": "That could mean a few different areas, and I found real metrics for several of them. Which view do you want?\n\n- Revenue / sales\n- Support operations\n- User activity / adoption\n- Conversion / rates\n- Warehouse session traffic\n\nPick one and I\u2019ll run the right metric.",
+    "tokens": 33557
+  }
+]

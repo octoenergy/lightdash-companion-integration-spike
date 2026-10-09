@@ -1,0 +1,13 @@
+[
+  {
+    "id": "ambiguous",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields"
+    ],
+    "queries": [],
+    "answer": "That\u2019s a bit too broad to answer with a single chart, but I did find a few real areas we can check:\n- Transactional messaging: message delivery, failure, creation, and interaction rates in `union_transactional_messaging_metrics_per_kpi_week`\n- Support operations: email reply wait time in `union_emai",
+    "tokens": 32820
+  }
+]

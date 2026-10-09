@@ -1,0 +1,13 @@
+[
+  {
+    "id": "ambiguous",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields"
+    ],
+    "queries": [],
+    "answer": "That could mean a few different areas, and I don\u2019t want to guess the KPI. I found governed metrics in these areas:\n- Support: email reply wait time, inbound emails with support replies, support workload per agent\n- Performance: warehouse queries, queue time, duration, failures\n- Revenue/Sales: reven",
+    "tokens": 24475
+  }
+]

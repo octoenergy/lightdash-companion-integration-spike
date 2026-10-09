@@ -12,7 +12,7 @@ from lightdash_companion_integration_spike import config
 from lightdash_companion_integration_spike.agent import agent as agent_module
 from lightdash_companion_integration_spike.agent import history
 from lightdash_companion_integration_spike.domain import blocks
-from lightdash_companion_integration_spike.lightdash import mcp_client
+from lightdash_companion_integration_spike.lightdash import analyst_prompt, mcp_client
 from lightdash_companion_integration_spike.storage import sqlite
 
 
@@ -20,7 +20,7 @@ async def turn(*, settings, client, connection, thread_id: str, question: str) -
     stored = sqlite.list_messages(connection=connection, thread_id=thread_id)
     existing = sqlite.list_artifact_versions(connection=connection, thread_id=thread_id)
     deps = agent_module.AgentDeps(settings=settings, client=client, connection=connection, thread_id=thread_id)
-    result = await agent_module.build_agent().run(
+    result = await agent_module.build_agent(server_guidance=await analyst_prompt.fetch_adapted_or_none(client=client)).run(
         question,
         deps=deps,
         message_history=history.build_message_history(stored=stored, existing_artifacts=existing),
@@ -52,7 +52,7 @@ async def main(question: str) -> None:
             thread_id=thread_id,
             on_step=on_step,
         )
-        result = await agent_module.build_agent().run(question, deps=deps)
+        result = await agent_module.build_agent(server_guidance=await analyst_prompt.fetch_adapted_or_none(client=client)).run(question, deps=deps)
 
     print("answer:", result.output.text)
     print("follow_ups:", result.output.follow_ups)

@@ -13,7 +13,7 @@ from lightdash_companion_integration_spike import config
 from lightdash_companion_integration_spike.agent import agent as agent_module
 from lightdash_companion_integration_spike.agent import history
 from lightdash_companion_integration_spike.domain import blocks
-from lightdash_companion_integration_spike.lightdash import content, embed, mcp_client, queries
+from lightdash_companion_integration_spike.lightdash import analyst_prompt, content, embed, mcp_client, queries
 from lightdash_companion_integration_spike.storage import sqlite
 
 logger = logging.getLogger(__name__)
@@ -133,7 +133,9 @@ async def _run_turn(
         deps = agent_module.AgentDeps(
             settings=settings, client=client, connection=connection, thread_id=thread_id, on_step=on_step
         )
-        agent = agent_module.build_agent()
+        agent = agent_module.build_agent(
+            server_guidance=await analyst_prompt.fetch_adapted_or_none(client=client)
+        )
         async with agent.iter(
             body.text,
             deps=deps,

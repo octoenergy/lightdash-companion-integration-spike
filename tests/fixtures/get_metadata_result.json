@@ -1,0 +1,89 @@
+{
+  "explores": [
+    {
+      "exploreId": "union_count_supply_points_per_kpi_week",
+      "status": "found",
+      "label": "Union count supply points per kpi week",
+      "description": "Count of supply points that are active on kraken in this week. One row per KPI week.",
+      "hint": null,
+      "baseTable": "union_count_supply_points_per_kpi_week",
+      "joinedTables": [],
+      "requiredFilters": [],
+      "parameters": [],
+      "baseDimensions": {
+        "count": 6,
+        "fieldIds": [
+          "union_count_supply_points_per_kpi_week_week_start_date",
+          "union_count_supply_points_per_kpi_week_share_installation",
+          "union_count_supply_points_per_kpi_week_count_active_supply_points_per_kpi_week",
+          "union_count_supply_points_per_kpi_week_count_operational_supply_points_per_kpi_week",
+          "union_count_supply_points_per_kpi_week_count_billable_supply_points_with_no_agreement_per_kpi_week",
+          "union_count_supply_points_per_kpi_week_ratio_billable_supply_points_with_no_agreement_per_kpi_week"
+        ]
+      },
+      "baseMetrics": {
+        "count": 4,
+        "fieldIds": [
+          "union_count_supply_points_per_kpi_week_count_active_supply_points_per_client_per_week",
+          "union_count_supply_points_per_kpi_week_count_operational_supply_points_per_client_per_week",
+          "union_count_supply_points_per_kpi_week_count_billable_supply_points_with_no_agreement_per_client_per_week",
+          "union_count_supply_points_per_kpi_week_ratio_billable_supply_points_with_no_agreement_per_client_per_week"
+        ]
+      }
+    },
+    {
+      "exploreId": "fact_cost_per_supply_point_monthly",
+      "status": "found",
+      "label": "Fact cost per supply point monthly",
+      "description": "One row per month and installation. KTL AWS effective cost (FOCUS, excl. Tax) blended with active supply points from the cost-model feature set, for cost-per-supply-point analysis in Lightdash. Cost is attributed to an installation via the ...(truncated)",
+      "hint": null,
+      "baseTable": "fact_cost_per_supply_point_monthly",
+      "joinedTables": [],
+      "requiredFilters": [],
+      "parameters": [],
+      "baseDimensions": {
+        "count": 11,
+        "fieldIds": [
+          "fact_cost_per_supply_point_monthly_is_external",
+          "fact_cost_per_supply_point_monthly_installation",
+          "fact_cost_per_supply_point_monthly_sum_effective_cost",
+          "fact_cost_per_supply_point_monthly_month_start_date_utc",
+          "fact_cost_per_supply_point_monthly_installation_month_id",
+          "fact_cost_per_supply_point_monthly_month_start_date_utc_day",
+          "fact_cost_per_supply_point_monthly_month_start_date_utc_week",
+          "fact_cost_per_supply_point_monthly_month_start_date_utc_year",
+          "fact_cost_per_supply_point_monthly_count_active_supply_points",
+          "fact_cost_per_supply_point_monthly_month_start_date_utc_month",
+          "fact_cost_per_supply_point_monthly_month_start_date_utc_quarter"
+        ]
+      },
+      "baseMetrics": {
+        "count": 3,
+        "fieldIds": [
+          "fact_cost_per_supply_point_monthly_total_effective_cost",
+          "fact_cost_per_supply_point_monthly_cost_per_supply_point",
+          "fact_cost_per_supply_point_monthly_total_active_supply_points"
+        ]
+      }
+    }
+  ],
+  "fields": [
+    {
+      "exploreId": "union_count_supply_points_per_kpi_week",
+      "fieldId": "union_count_supply_points_per_kpi_week_count_active_supply_points_per_client_per_week",
+      "status": "found",
+      "kind": "metric",
+      "fieldType": "sum",
+      "label": "Count of Active Supply Points",
+      "filterType": "number",
+      "isFromJoinedTable": false,
+      "joinedTableName": null,
+      "caseSensitiveFilters": null,
+      "defaultTimeDimension": null,
+      "defaultTimeDimensionGranularity": null,
+      "requiredParameters": [],
+      "description": "Count of supply points that are active on kraken in this week. This metric is pre-aggregated to a weekly granularity for each client. As a result, it cannot be rolled up or broken down further into finer timeframes.",
+      "hint": null
+    }
+  ]
+}

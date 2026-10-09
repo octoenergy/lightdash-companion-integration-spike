@@ -1,0 +1,54 @@
+[
+  {
+    "id": "single-value",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "fact_cost_per_supply_point_monthly | dims=[] | metrics=['fact_cost_per_supply_point_monthly_total_active_supply_points'] | filters=no | rows=1"
+    ],
+    "answer": "There are 2,093,569,283 active supply points using the governed metric in `fact_cost_per_supply_point_monthly`.\n\nNote: this metric is a monthly, start-of-month snapshot, and the explore is one row per month and installation, so this total is summed across the available monthly data rather than a sin",
+    "tokens": 30586
+  },
+  {
+    "id": "yesterday",
+    "ok": false,
+    "problems": [
+      "no chart produced"
+    ],
+    "tools": [
+      "find_fields",
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "describe_explore",
+      "describe_fields"
+    ],
+    "queries": [],
+    "answer": "I couldn\u2019t return a trustworthy \u201cyesterday\u201d total from the governed metrics available. The closest supply-point metrics I found are either monthly start-of-month snapshots or a daily average metric, not a daily total across all clients for yesterday.\n\nI checked:\n- `fact_cost_per_supply_point_monthly",
+    "tokens": 63430
+  },
+  {
+    "id": "ambiguous",
+    "ok": false,
+    "problems": [
+      "answered an unanswerable question"
+    ],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "union_transactional_messaging_metrics_per_kpi_week | dims=[] | metrics=['union_transactional_messaging_metrics_per_kpi_week_count_messages_sent_per_client_per_week', 'union_transactional_messaging_metrics_per_kpi_week_message_delivery_rate_per_client_per_week', 'union_transactional_messaging_metrics_per_kpi_week_message_failure_rate_per_client_per_week'] | filters=no | rows=1"
+    ],
+    "answer": "From the transactional messaging KPIs, we\u2019re doing strongly on delivery volume and reliability overall: about 367.4M messages sent, with a 99.46% delivery rate. Failure rate is about 2.08% of created messages. I used the governed weekly transactional messaging explore, where the rates are recomputed",
+    "tokens": 32255
+  }
+]

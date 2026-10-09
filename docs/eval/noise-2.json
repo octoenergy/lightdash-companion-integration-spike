@@ -1,0 +1,53 @@
+[
+  {
+    "id": "single-value",
+    "ok": true,
+    "problems": [],
+    "tools": [
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "fact_cost_per_supply_point_monthly | dims=[] | metrics=['fact_cost_per_supply_point_monthly_total_active_supply_points'] | filters=no | rows=1"
+    ],
+    "answer": "There are 2,093,569,283 active supply points using `fact_cost_per_supply_point_monthly_total_active_supply_points` from the `fact_cost_per_supply_point_monthly` explore. Note this metric is a start-of-month snapshot on a monthly explore, so without a time filter it sums across all months and install",
+    "tokens": 30518
+  },
+  {
+    "id": "yesterday",
+    "ok": false,
+    "problems": [
+      "no chart produced"
+    ],
+    "tools": [
+      "find_fields",
+      "find_fields",
+      "describe_explore",
+      "describe_fields"
+    ],
+    "queries": [],
+    "answer": "I can\u2019t answer this exactly with the available governed metric.\n\nThe only supply-point metric I found is in `fact_cost_per_supply_point_monthly`, and that explore is one row per month and installation. Its `Total active supply points` metric is a start-of-month snapshot, so it cannot be used to retu",
+    "tokens": 36063
+  },
+  {
+    "id": "ambiguous",
+    "ok": false,
+    "problems": [
+      "answered an unanswerable question"
+    ],
+    "tools": [
+      "find_fields",
+      "find_fields",
+      "describe_explore",
+      "describe_fields",
+      "run_query"
+    ],
+    "queries": [
+      "union_warehouse_performance_daily | dims=['union_warehouse_performance_daily_activity_date_month'] | metrics=['union_warehouse_performance_daily_total_dbus', 'union_warehouse_performance_daily_sum_total_queries', 'union_warehouse_performance_daily_warehouse_performance_days'] | filters=no | rows=5"
+    ],
+    "answer": "I pulled a high-level warehouse performance overview by month from `union_warehouse_performance_daily`.\n\nAt a glance, activity appears to ramp up sharply from June into July and August, with both total queries and DBU consumption increasing substantially. This suggests overall usage is growing, thou",
+    "tokens": 72762
+  }
+]
