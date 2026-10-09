@@ -1,0 +1,35 @@
+[project]
+name = "lightdash-companion-integration-spike"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "joe-sharman", email = "joe.sharman@kraken.tech" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "attrs>=26.1.0",
+    "fastapi>=0.143.0",
+    "fastmcp>=4.1.0",
+    "httpx>=0.28.1",
+    "pydantic-ai-slim[openai]>=2.54.0",
+    "pydantic-settings>=2.15.0",
+    "pyjwt>=2.15.1",
+    "sse-starlette>=3.5.0",
+    "uvicorn>=0.54.0",
+]
+
+[project.scripts]
+lightdash-companion-integration-spike = "lightdash_companion_integration_spike:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.10",
+]

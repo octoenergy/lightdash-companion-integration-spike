@@ -1,0 +1,26 @@
+:root { font-family: system-ui, sans-serif; color: #1a1a1a; }
+body { margin: 0; }
+#app { display: grid; grid-template-columns: 220px 1fr; height: 100vh; }
+aside { border-right: 1px solid #ddd; padding: 12px; overflow: auto; }
+.threads { list-style: none; padding: 0; }
+.threads button { width: 100%; text-align: left; background: none; border: 0; padding: 6px 0; cursor: pointer; }
+main { display: flex; flex-direction: column; min-width: 0; }
+.log { flex: 1; overflow: auto; padding: 16px; }
+.message { margin-bottom: 16px; max-width: 720px; }
+.message.user { background: #f0f4ff; padding: 8px 12px; border-radius: 8px; }
+.card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin: 8px 0; }
+.card h3 { margin: 0 0 8px; font-size: 14px; }
+.controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.editor { display: grid; gap: 6px; margin-bottom: 8px; padding: 8px; background: #fafafa; }
+.editor label { display: grid; gap: 2px; font-size: 12px; }
+table { border-collapse: collapse; font-size: 13px; }
+th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { border: 1px solid #99a; background: #fff; border-radius: 16px; padding: 4px 10px; cursor: pointer; }
+.composer { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #ddd; }
+.composer input { flex: 1; padding: 8px; }
+.status-line { padding: 0 16px; color: #667; min-height: 18px; font-size: 13px; }
+.feedback button[aria-pressed="true"] { background: #dfe8ff; }
+[hidden] { display: none !important; }
+.render-error { color: #8a1c1c; background: #fdf0f0; padding: 8px 12px; border-radius: 8px; }
+.status-line.error { color: #8a1c1c; }

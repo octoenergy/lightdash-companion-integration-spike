@@ -1,0 +1,15 @@
+{
+  "status": "done",
+  "queryUuid": "1ca36324-e6d1-46ad-a917-b72d65667d82",
+  "rows": [
+    {"fct_dbt_runs_dbt_run_status": "partial success", "fct_dbt_runs_avg_execution_time": 2542.825313},
+    {"fct_dbt_runs_dbt_run_status": "fail", "fct_dbt_runs_avg_execution_time": 64.827634},
+    {"fct_dbt_runs_dbt_run_status": "success", "fct_dbt_runs_avg_execution_time": 54.557038},
+    {"fct_dbt_runs_dbt_run_status": "skipped", "fct_dbt_runs_avg_execution_time": 0}
+  ],
+  "fields": {
+    "fct_dbt_runs_dbt_run_status": {"name": "dbt_run_status", "type": "string", "label": "Dbt run status", "table": "fct_dbt_runs", "fieldType": "dimension", "tableLabel": "Fct dbt runs"},
+    "fct_dbt_runs_avg_execution_time": {"name": "avg_execution_time", "type": "average", "label": "Avg Execution Time in seconds", "table": "fct_dbt_runs", "fieldType": "metric", "tableLabel": "Fct dbt runs"}
+  },
+  "exploreUrl": "https://lightdash.ktl.data.ktl.net/share/cxInuilWUMAg8C5KI_MGx"
+}
