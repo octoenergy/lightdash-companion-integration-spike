@@ -1,3 +1,4 @@
+import * as filters from "./filters";
 import * as types from "./types";
 
 export type ChartBlock = {
@@ -110,7 +111,10 @@ export async function exploreUrl(args: types.ChartArgs): Promise<string> {
     const response = await fetch("/api/explore-url", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query_config: args.queryConfig }),
+        body: JSON.stringify({
+            query_config: args.queryConfig,
+            lightdash_filters: filters.toLightdashFilters(args),
+        }),
     });
     if (!response.ok) throw new Error((await response.json()).detail ?? "Explore unavailable");
     return (await response.json()).url;
@@ -124,6 +128,7 @@ export async function saveChart(args: types.ChartArgs): Promise<{ href: string }
             title: args.title,
             description: args.description,
             query_config: args.queryConfig,
+            lightdash_filters: filters.toLightdashFilters(args),
         }),
     });
     if (!response.ok) throw new Error((await response.json()).detail ?? "Save failed");

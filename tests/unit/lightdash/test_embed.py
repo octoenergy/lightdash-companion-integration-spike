@@ -53,3 +53,23 @@ class TestExploreState:
             "limit": 5,
             "tableCalculations": [],
         }
+
+
+LIGHTDASH_FILTERS = {"dimensions": {"id": "g", "and": [{"id": "r", "target": {"fieldId": "d"}, "operator": "inThePast", "values": [7]}]}}
+
+
+class TestExploreStateFilters:
+    def test_carries_the_filters_into_the_metric_query(self) -> None:
+        state = embed.explore_state(
+            explore_name="o", query_config={"dimensions": ["d"], "metrics": ["m"]},
+            column_order=["d", "m"], filters=LIGHTDASH_FILTERS,
+        )
+
+        assert state["metricQuery"]["filters"] == LIGHTDASH_FILTERS  # type: ignore[index]  # dict built above
+
+    def test_sends_no_filters_when_none_were_given(self) -> None:
+        state = embed.explore_state(
+            explore_name="o", query_config={"dimensions": ["d"], "metrics": ["m"]}, column_order=["d", "m"],
+        )
+
+        assert state["metricQuery"]["filters"] == {}  # type: ignore[index]  # dict built above

@@ -24,3 +24,6 @@ th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; }
 [hidden] { display: none !important; }
 .render-error { color: #8a1c1c; background: #fdf0f0; padding: 8px 12px; border-radius: 8px; }
 .status-line.error { color: #8a1c1c; }
+.filter-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.filter-list li { display: flex; gap: 8px; align-items: center; margin: 2px 0; }
+.filter-list .muted { color: #667; }

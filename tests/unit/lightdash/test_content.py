@@ -21,6 +21,17 @@ class TestSlugify:
         assert content.slugify(title="???", unique_suffix="abcdef12") == "chart-abcdef12"
 
 
+class TestBuildBarChartContentFilters:
+    def test_saves_the_filters_with_the_chart(self) -> None:
+        filters = {"dimensions": {"id": "g", "and": []}}
+
+        built = content.build_bar_chart_content(
+            title="T", description="D", slug="t-1", space_slug="sandbox", query_config=QUERY, filters=filters
+        )
+
+        assert built["metricQuery"]["filters"] == filters  # type: ignore[index]  # dict built above
+
+
 class TestBuildBarChartContent:
     def test_places_the_chart_in_the_requested_space_with_its_query(self) -> None:
         built = content.build_bar_chart_content(

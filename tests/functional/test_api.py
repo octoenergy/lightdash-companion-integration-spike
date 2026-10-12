@@ -163,3 +163,34 @@ class TestSaveChart:
         )
 
         assert (response.status_code, response.json()["detail"]) == (422, "no permission")
+
+
+class TestFiltersReachSaveAndExplore:
+    @mock.patch.object(routes.content, "create_chart")
+    def test_save_writes_the_filters_into_the_chart(
+        self, create_chart: mock.AsyncMock, client: testclient.TestClient
+    ) -> None:
+        create_chart.return_value = content.SavedChart(href="/x", uuid="u")
+        filters = {"dimensions": {"id": "g", "and": [{"id": "r"}]}}
+
+        client.post(
+            "/api/charts/save",
+            json={
+                "title": "T",
+                "query_config": {"exploreName": "o", "dimensions": ["a"], "metrics": ["m"]},
+                "lightdash_filters": filters,
+            },
+        )
+
+        assert create_chart.call_args.kwargs["content"]["metricQuery"]["filters"] == filters
+
+    def test_explore_link_carries_the_filters(self, client: testclient.TestClient) -> None:
+        filters = {"dimensions": {"id": "g", "and": [{"id": "r"}]}}
+
+        response = client.post(
+            "/api/explore-url",
+            json={"query_config": {"exploreName": "o", "dimensions": ["a"], "metrics": ["m"]}, "lightdash_filters": filters},
+        )
+
+        assert "inThePast" not in response.json()["url"]  # sanity: operator is inside the encoded blob
+        assert "%22and%22" in response.json()["url"]

@@ -3,6 +3,7 @@ import * as echarts from "echarts";
 import * as api from "./api";
 import * as chart from "./chart";
 import * as download from "./download";
+import * as filters from "./filters";
 import * as table from "./table";
 import * as types from "./types";
 
@@ -150,17 +151,25 @@ export function renderCard(block: api.ChartBlock, versions: api.ChartBlock[]): H
         controls.append(switcher);
     }
 
-    buildEditor(editor, payload, async (next) => {
+    // The editor is rebuilt from the latest payload after each run, so its filter list and
+    // field values never describe a query that is no longer showing.
+    const mountEditor = (message: string): void => {
+        editor.replaceChildren();
+        buildEditor(editor, payload, async (next) => {
+            const status = editor.querySelector<HTMLElement>(".status");
+            if (status) status.textContent = "Running…";
+            try {
+                payload = await api.rerunQuery(next);
+                redraw();
+                mountEditor(`Updated · ${payload.rows.length} rows (no LLM call)`);
+            } catch (error) {
+                if (status) status.textContent = String(error);
+            }
+        });
         const status = editor.querySelector<HTMLElement>(".status");
-        if (status) status.textContent = "Running…";
-        try {
-            payload = await api.rerunQuery(next);
-            redraw();
-            if (status) status.textContent = `Updated · ${payload.rows.length} rows (no LLM call)`;
-        } catch (error) {
-            if (status) status.textContent = String(error);
-        }
-    });
+        if (status) status.textContent = message;
+    };
+    mountEditor("");
 
     card.append(heading, controls, editor, body);
     redraw();
@@ -202,7 +211,22 @@ function buildEditor(
         wrapper.append(input);
         return wrapper;
     };
+    const filterList = el("ul", "filter-list");
+    const active = filters.describeFilters(payload.args);
+    if (active.length === 0) {
+        filterList.append(el("li", "muted", "No filters"));
+    }
+    active.forEach((description, index) => {
+        const item = el("li", undefined, description);
+        item.append(
+            button("Remove", () => {
+                void onRun(filters.withoutRule({ ...payload.args, queryConfig: config }, index));
+            }),
+        );
+        filterList.append(item);
+    });
     container.append(
+        labelled("Filters", filterList),
         labelled("Dimensions", dimensions),
         labelled("Metrics", metrics),
         labelled("Limit", limit),

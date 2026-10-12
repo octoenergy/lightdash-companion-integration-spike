@@ -6,6 +6,7 @@ export type QueryConfig = {
     metrics: string[];
     sorts: { fieldId: string; descending: boolean }[];
     limit: number | null;
+    filters?: unknown;
 };
 
 export type ChartArgs = {

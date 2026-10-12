@@ -56,13 +56,19 @@ def now_seconds() -> int:
 
 
 def explore_state(
-    *, explore_name: str, query_config: Mapping[str, object], column_order: list[str]
+    *,
+    explore_name: str,
+    query_config: Mapping[str, object],
+    column_order: list[str],
+    filters: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """
     Build the `create_saved_chart_version` payload the embedded explore loads.
 
     This mirrors what Lightdash puts in the `exploreUrl` share link, minus the chart config,
     so the explore opens on the table view of the same query.
+
+    `filters` must already be in Lightdash's group format (not the MCP's flat rules).
     """
     return {
         "tableName": explore_name,
@@ -70,7 +76,7 @@ def explore_state(
             "exploreName": explore_name,
             "dimensions": query_config.get("dimensions", []),
             "metrics": query_config.get("metrics", []),
-            "filters": {},
+            "filters": dict(filters) if filters else {},
             "sorts": query_config.get("sorts", []),
             "limit": query_config.get("limit") or 500,
             "tableCalculations": [],

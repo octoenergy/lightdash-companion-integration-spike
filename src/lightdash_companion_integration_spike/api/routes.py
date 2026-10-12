@@ -224,6 +224,7 @@ async def rerun_query(body: RerunRequest, request: fastapi.Request) -> dict[str,
 
 class ExploreRequest(pydantic.BaseModel):
     query_config: dict[str, object]
+    lightdash_filters: dict[str, object] | None = None
     user_attributes: dict[str, str] = pydantic.Field(default_factory=dict)
 
 
@@ -258,6 +259,7 @@ def explore_url(body: ExploreRequest, request: fastapi.Request) -> dict[str, str
                 explore_name=explore_name,
                 query_config=body.query_config,
                 column_order=column_order,
+                filters=body.lightdash_filters,
             ),
             token=token,
         )
@@ -268,6 +270,7 @@ class SaveChartRequest(pydantic.BaseModel):
     title: str
     description: str = ""
     query_config: dict[str, object]
+    lightdash_filters: dict[str, object] | None = None
 
 
 @router.post("/charts/save")
@@ -282,6 +285,7 @@ async def save_chart(body: SaveChartRequest, request: fastapi.Request) -> dict[s
             slug=content.slugify(title=body.title, unique_suffix=uuid.uuid4().hex),
             space_slug=settings.sandbox_space_slug,
             query_config=body.query_config,
+            filters=body.lightdash_filters,
         )
     except content.UnsupportedChartShape as error:
         raise fastapi.HTTPException(
