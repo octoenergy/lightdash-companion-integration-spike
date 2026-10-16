@@ -67,48 +67,15 @@ class TestFeedback:
         assert client.get(f"/api/threads/{thread_id}").json()[0]["feedback"] == "up"
 
 
-class TestRerunQuery:
-    @mock.patch.object(routes.queries, "run_metric_query")
-    def test_runs_the_edited_query_without_the_agent(
-        self, run_metric_query: mock.AsyncMock, client: testclient.TestClient
+class TestMcpAppHtml:
+    @mock.patch.object(routes.mcp_app, "read_html", return_value="<html>app</html>")
+    def test_serves_the_servers_app_html_so_the_browser_can_frame_it(
+        self, read_html: mock.AsyncMock, client: testclient.TestClient
     ) -> None:
-        run_metric_query.return_value = queries.QueryResult(
-            query_uuid="q", rows=({"a": 1},), fields={"a": {}}, explore_url="https://x"
-        )
+        response = client.get("/api/mcp-app/html")
 
-        response = client.post(
-            "/api/queries/rerun",
-            json={"title": "t", "query_config": {"exploreName": "orders", "limit": 3}},
-        )
-
-        assert response.json() == {"queryUuid": "q", "rows": [{"a": 1}], "fields": {"a": {}}, "exploreUrl": "https://x"}
-        assert run_metric_query.call_args.kwargs["arguments"]["queryConfig"] == {"exploreName": "orders", "limit": 3}
-
-    @mock.patch.object(routes.queries, "run_metric_query")
-    def test_reports_the_server_message_when_the_query_is_rejected(
-        self, run_metric_query: mock.AsyncMock, client: testclient.TestClient
-    ) -> None:
-        run_metric_query.side_effect = queries.MissingStructuredResult(server_message="bad field")
-
-        response = client.post("/api/queries/rerun", json={"title": "t", "query_config": {}})
-
-        assert (response.status_code, response.json()["detail"]) == (422, "bad field")
-
-
-class TestRerunQueryIdentity:
-    @mock.patch.object(routes.queries, "run_metric_query")
-    def test_narrows_row_level_security_with_the_admin_token_and_attributes(
-        self, run_metric_query: mock.AsyncMock, offline_mcp_client: mock.Mock, client: testclient.TestClient
-    ) -> None:
-        run_metric_query.return_value = queries.QueryResult(query_uuid="q", rows=(), fields={}, explore_url=None)
-
-        client.post(
-            "/api/queries/rerun",
-            json={"title": "t", "query_config": {}, "user_attributes": {"tenant_id": "1"}},
-        )
-
-        assert offline_mcp_client.call_args.kwargs["token"] == "admin-token"
-        assert offline_mcp_client.call_args.kwargs["attributes"] == {"tenant_id": "1"}
+        assert (response.status_code, response.text) == (200, "<html>app</html>")
+        assert response.headers["content-type"].startswith("text/html")
 
 
 class TestTokenSelection:
@@ -163,3 +130,34 @@ class TestSaveChart:
         )
 
         assert (response.status_code, response.json()["detail"]) == (422, "no permission")
+
+
+class TestFiltersReachSaveAndExplore:
+    @mock.patch.object(routes.content, "create_chart")
+    def test_save_writes_the_filters_into_the_chart(
+        self, create_chart: mock.AsyncMock, client: testclient.TestClient
+    ) -> None:
+        create_chart.return_value = content.SavedChart(href="/x", uuid="u")
+        filters = {"dimensions": {"id": "g", "and": [{"id": "r"}]}}
+
+        client.post(
+            "/api/charts/save",
+            json={
+                "title": "T",
+                "query_config": {"exploreName": "o", "dimensions": ["a"], "metrics": ["m"]},
+                "lightdash_filters": filters,
+            },
+        )
+
+        assert create_chart.call_args.kwargs["content"]["metricQuery"]["filters"] == filters
+
+    def test_explore_link_carries_the_filters(self, client: testclient.TestClient) -> None:
+        filters = {"dimensions": {"id": "g", "and": [{"id": "r"}]}}
+
+        response = client.post(
+            "/api/explore-url",
+            json={"query_config": {"exploreName": "o", "dimensions": ["a"], "metrics": ["m"]}, "lightdash_filters": filters},
+        )
+
+        assert "inThePast" not in response.json()["url"]  # sanity: operator is inside the encoded blob
+        assert "%22and%22" in response.json()["url"]

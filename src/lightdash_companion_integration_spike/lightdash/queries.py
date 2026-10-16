@@ -100,9 +100,9 @@ async def run_metric_query(
 
     Raises QueryFailed if the query errors, and QueryStillRunning if it outlasts the poll budget.
     """
-    scope = _scope(project_uuid=project_uuid, agent_uuid=agent_uuid)
+    request_scope = scope(project_uuid=project_uuid, agent_uuid=agent_uuid)
     raw = await mcp_client.call_tool_raw(
-        client=client, name="run_metric_query", arguments={**scope, **arguments}
+        client=client, name="run_metric_query", arguments={**request_scope, **arguments}
     )
     logger.info("run_metric_query explore=%s", arguments.get("queryConfig", {}).get("exploreName"))  # type: ignore[attr-defined]  # queryConfig is a mapping when present
     try:
@@ -118,7 +118,7 @@ async def run_metric_query(
         raw = await mcp_client.call_tool_raw(
             client=client,
             name="get_query_result",
-            arguments={**scope, "queryUuid": outcome.query_uuid},
+            arguments={**request_scope, "queryUuid": outcome.query_uuid},
         )
         outcome = parse_result(structured_content=raw.structured_content, text=_text_of(raw))
 
@@ -131,7 +131,7 @@ def _text_of(raw: types.CallToolResult) -> str:
     return "\n".join(block.text for block in raw.content if isinstance(block, types.TextContent))
 
 
-def _scope(*, project_uuid: str, agent_uuid: str | None) -> dict[str, str]:
+def scope(*, project_uuid: str, agent_uuid: str | None) -> dict[str, str]:
     scope = {"projectUuid": project_uuid}
     if agent_uuid is not None:
         scope["agentUuid"] = agent_uuid

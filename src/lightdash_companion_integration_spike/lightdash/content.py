@@ -33,9 +33,12 @@ def build_bar_chart_content(
     slug: str,
     space_slug: str,
     query_config: Mapping[str, object],
+    filters: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """
     Build chart-as-code JSON for a single-dimension bar chart.
+
+    `filters` must already be in Lightdash's group format (not the MCP's flat rules).
 
     Every dimension must be used by the layout, otherwise Lightdash adds an unintended GROUP BY,
     so this only supports one dimension on the x axis.
@@ -60,7 +63,7 @@ def build_bar_chart_content(
             "exploreName": explore_name,
             "dimensions": dimensions,
             "metrics": metrics,
-            "filters": {},
+            "filters": dict(filters) if filters else {},
             "sorts": query_config.get("sorts", []),
             "tableCalculations": [],
             "limit": query_config.get("limit") or DEFAULT_LIMIT,

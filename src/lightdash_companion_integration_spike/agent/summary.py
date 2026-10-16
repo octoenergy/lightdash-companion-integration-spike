@@ -19,7 +19,7 @@ def summarize_for_llm(*, result: queries.QueryResult, artifact_id: str, version:
         "row_count": len(result.rows),
         "columns": list(result.fields),
         "sample_rows": [dict(row) for row in result.rows[:SAMPLE_ROW_COUNT]],
-        "note": "The user can already see the full chart and table. Do not repeat every row.",
+        "note": "Call render_chart with this query_uuid so the user sees the chart. Do not repeat every row.",
     }
 
 

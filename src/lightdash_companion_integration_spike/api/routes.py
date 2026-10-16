@@ -13,7 +13,7 @@ from lightdash_companion_integration_spike import config
 from lightdash_companion_integration_spike.agent import agent as agent_module
 from lightdash_companion_integration_spike.agent import history
 from lightdash_companion_integration_spike.domain import blocks
-from lightdash_companion_integration_spike.lightdash import analyst_prompt, content, embed, mcp_client, queries
+from lightdash_companion_integration_spike.lightdash import analyst_prompt, content, embed, mcp_app, mcp_client, queries
 from lightdash_companion_integration_spike.storage import sqlite
 
 logger = logging.getLogger(__name__)
@@ -30,13 +30,6 @@ class NewMessage(pydantic.BaseModel):
 
 class Feedback(pydantic.BaseModel):
     rating: str
-
-
-class RerunRequest(pydantic.BaseModel):
-    title: str
-    description: str = ""
-    query_config: dict[str, object]
-    user_attributes: dict[str, str] | None = None
 
 
 def _settings(request: fastapi.Request) -> config.Settings:
@@ -191,39 +184,18 @@ def post_feedback(message_id: str, body: Feedback, request: fastapi.Request) -> 
     return {"status": "saved"}
 
 
-@router.post("/queries/rerun")
-async def rerun_query(body: RerunRequest, request: fastapi.Request) -> dict[str, object]:
+@router.get("/mcp-app/html")
+async def mcp_app_html(request: fastapi.Request) -> fastapi.Response:
     settings = _settings(request)
-    client = mcp_client.create_client(
-        settings=settings,
-        token=_token_for(settings=settings, user_attributes=body.user_attributes),
-        attributes=body.user_attributes,
-    )
+    client = mcp_client.create_client(settings=settings, token=settings.lightdash_token)
     async with client:
-        try:
-            result = await queries.run_metric_query(
-                client=client,
-                project_uuid=settings.project_uuid,
-                agent_uuid=settings.agent_uuid,
-                arguments={
-                    "title": body.title,
-                    "description": body.description,
-                    "queryConfig": body.query_config,
-                    "chartConfig": None,
-                },
-            )
-        except queries.MissingStructuredResult as error:
-            raise fastapi.HTTPException(status_code=422, detail=error.server_message) from error
-    return {
-        "queryUuid": result.query_uuid,
-        "rows": list(result.rows),
-        "fields": dict(result.fields),
-        "exploreUrl": result.explore_url,
-    }
+        html = await mcp_app.read_html(client=client)
+    return fastapi.Response(content=html, media_type="text/html")
 
 
 class ExploreRequest(pydantic.BaseModel):
     query_config: dict[str, object]
+    lightdash_filters: dict[str, object] | None = None
     user_attributes: dict[str, str] = pydantic.Field(default_factory=dict)
 
 
@@ -258,6 +230,7 @@ def explore_url(body: ExploreRequest, request: fastapi.Request) -> dict[str, str
                 explore_name=explore_name,
                 query_config=body.query_config,
                 column_order=column_order,
+                filters=body.lightdash_filters,
             ),
             token=token,
         )
@@ -268,6 +241,7 @@ class SaveChartRequest(pydantic.BaseModel):
     title: str
     description: str = ""
     query_config: dict[str, object]
+    lightdash_filters: dict[str, object] | None = None
 
 
 @router.post("/charts/save")
@@ -282,6 +256,7 @@ async def save_chart(body: SaveChartRequest, request: fastapi.Request) -> dict[s
             slug=content.slugify(title=body.title, unique_suffix=uuid.uuid4().hex),
             space_slug=settings.sandbox_space_slug,
             query_config=body.query_config,
+            filters=body.lightdash_filters,
         )
     except content.UnsupportedChartShape as error:
         raise fastapi.HTTPException(

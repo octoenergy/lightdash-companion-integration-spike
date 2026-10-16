@@ -12,7 +12,7 @@ from lightdash_companion_integration_spike import config
 from lightdash_companion_integration_spike.agent import chart_config as chart_config_module
 from lightdash_companion_integration_spike.agent import discovery, summary
 from lightdash_companion_integration_spike.domain import artifacts, blocks, query_spec
-from lightdash_companion_integration_spike.lightdash import mcp_client, queries
+from lightdash_companion_integration_spike.lightdash import mcp_app, mcp_client, queries
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +36,9 @@ You answer data questions using the Lightdash semantic layer.
    calculations: if no metric fits, say so instead of inventing one.
 3. To change an earlier chart (add a filter, split by month, change metric), reuse its
    artifact_id so it becomes a new version. For a different question use artifact_id "new".
-4. The user sees the chart and table automatically. Reply with a short explanation and
-   2-3 follow-ups. Never list every row.
+4. After run_query, call render_chart with the query_uuid it returned and a chart_config that
+   suits the data. The user then sees the chart. Reply with a short explanation and 2-3
+   follow-ups. Never list every row.
 5. Write each follow-up as a request the user can click to run, phrased as an instruction
    such as "Split by month" or "Show only the last 30 days". Never phrase a follow-up as a
    question to the user ("Do you want...?").
@@ -187,26 +188,23 @@ def build_agent(
         title: str,
         description: str,
         query_config: query_spec.QuerySpec,
-        chart_config: dict[str, object] | None = None,
     ) -> dict[str, object]:
         """
         Run a governed metric query. artifact_id is "new" or an existing id.
-        chart_config may set defaultVizType (table, bar, horizontal, line, scatter, pie, funnel),
-        xAxisDimension, yAxisMetrics, xAxisLabel and yAxisLabel.
+        Follow with render_chart to show the result.
         """
         logger.info(
-            "tool run_query artifact=%s title=%r query=%s chart=%s",
-            artifact_id, title, query_config.to_mcp(), chart_config,
+            "tool run_query artifact=%s title=%r query=%s",
+            artifact_id, title, query_config.to_mcp(),
         )
         _record_call(deps=ctx.deps, name="run_query", arguments={"title": title, "query": query_config.to_mcp()})
         await _announce(deps=ctx.deps, step="Running query…")
-        chart_config = chart_config_module.normalize(chart_config=chart_config)
         mcp_query_config = query_config.to_mcp()
         arguments: Mapping[str, object] = {
             "title": title,
             "description": description,
             "queryConfig": mcp_query_config,
-            "chartConfig": chart_config,
+            "chartConfig": None,
         }
         result = await queries.run_metric_query(
             client=ctx.deps.client,
@@ -228,7 +226,7 @@ def build_agent(
                     "title": title,
                     "description": description,
                     "queryConfig": mcp_query_config,
-                    "chartConfig": chart_config,
+                    "chartConfig": None,
                 },
                 rows=[dict(row) for row in result.rows],
                 fields=dict(result.fields),
@@ -237,7 +235,45 @@ def build_agent(
         )
         return summary.summarize_for_llm(result=result, artifact_id=resolved_id, version=version)
 
+    @agent.tool
+    async def render_chart(
+        ctx: pydantic_ai.RunContext[AgentDeps],
+        query_uuid: str,
+        title: str,
+        chart_config: dict[str, object],
+    ) -> str:
+        """
+        Show the result of a run_query call as a chart. Pass its query_uuid exactly.
+        chart_config sets defaultVizType (table, bar, horizontal, line, scatter, pie, funnel),
+        xAxisDimension, yAxisMetrics, groupBy, xAxisLabel and yAxisLabel.
+        """
+        logger.info("tool render_chart query=%s title=%r chart=%s", query_uuid, title, chart_config)
+        _record_call(deps=ctx.deps, name="render_chart", arguments={"title": title, "chart": chart_config})
+        await _announce(deps=ctx.deps, step="Drawing chart…")
+        block = _block_for_query(deps=ctx.deps, query_uuid=query_uuid)
+        if block is None:
+            return f"No query with query_uuid {query_uuid} was run in this turn. Call run_query first."
+        result = await mcp_app.render_chart(
+            client=ctx.deps.client,
+            scope=queries.scope(
+                project_uuid=ctx.deps.settings.project_uuid, agent_uuid=ctx.deps.settings.agent_uuid
+            ),
+            query_uuid=query_uuid,
+            title=title,
+            description=str(block.query_args["description"]),
+            chart_config=chart_config,
+        )
+        normalized = chart_config_module.normalize(chart_config=chart_config)
+        block.app_input = {"queryUuid": query_uuid, "title": title, "chartConfig": normalized}
+        block.app_result = result
+        block.query_args = {**block.query_args, "chartConfig": normalized}
+        return "Chart shown to the user."
+
     return agent
+
+
+def _block_for_query(*, deps: AgentDeps, query_uuid: str) -> blocks.ChartBlock | None:
+    return next((block for block in deps.chart_blocks if block.query_uuid == query_uuid), None)
 
 
 def _stored_versions(*, deps: AgentDeps) -> list[artifacts.ArtifactVersion]:
