@@ -8,9 +8,8 @@ export type ChartBlock = {
     title: string;
     query_uuid: string;
     query_args: types.ChartArgs;
-    rows: types.RawRow[];
-    fields: Record<string, unknown>;
-    explore_url: string | null;
+    app_input: Record<string, unknown> | null;
+    app_result: Record<string, unknown> | null;
 };
 
 export type Block =
@@ -51,21 +50,6 @@ export async function sendFeedback(messageId: string, rating: "up" | "down"): Pr
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ rating }),
     });
-}
-
-export async function rerunQuery(args: types.ChartArgs): Promise<types.ChartPayload> {
-    const response = await fetch("/api/queries/rerun", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-            title: args.title,
-            description: args.description,
-            query_config: args.queryConfig,
-        }),
-    });
-    if (!response.ok) throw new Error((await response.json()).detail ?? "Query failed");
-    const result = await response.json();
-    return { ...result, args };
 }
 
 // EventSource can't POST, so the stream is read by hand.
@@ -133,4 +117,10 @@ export async function saveChart(args: types.ChartArgs): Promise<{ href: string }
     });
     if (!response.ok) throw new Error((await response.json()).detail ?? "Save failed");
     return response.json();
+}
+
+export async function mcpAppHtml(): Promise<string> {
+    const response = await fetch("/api/mcp-app/html");
+    if (!response.ok) throw new Error("MCP App resource unavailable");
+    return response.text();
 }

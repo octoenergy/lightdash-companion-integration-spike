@@ -1,5 +1,3 @@
-export type RawRow = Record<string, unknown>;
-
 export type QueryConfig = {
     exploreName: string;
     dimensions: string[];
@@ -16,29 +14,7 @@ export type ChartArgs = {
     chartConfig: Record<string, unknown> | null;
 };
 
-export type ChartPayload = {
-    queryUuid: string;
-    rows: RawRow[];
-    fields: Record<string, unknown>;
-    exploreUrl: string | null;
-    args: ChartArgs;
+export type AppRender = {
+    input: Record<string, unknown>;
+    result: Record<string, unknown>;
 };
-
-export type VizType =
-    | "table"
-    | "bar"
-    | "horizontal"
-    | "line"
-    | "scatter"
-    | "pie"
-    | "funnel";
-
-export const VIZ_TYPES: VizType[] = [
-    "table",
-    "bar",
-    "horizontal",
-    "line",
-    "scatter",
-    "pie",
-    "funnel",
-];

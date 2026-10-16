@@ -1,13 +1,5 @@
-import * as echarts from "echarts";
-
 import * as api from "./api";
-import * as chart from "./chart";
-import * as download from "./download";
-import * as filters from "./filters";
-import * as table from "./table";
-import * as types from "./types";
-
-const CHART_SIZE = { width: 640, height: 340 };
+import * as mcpApp from "./mcp_app";
 
 function el<K extends keyof HTMLElementTagNameMap>(
     tag: K,
@@ -27,210 +19,60 @@ function button(label: string, onClick: () => void): HTMLButtonElement {
     return node;
 }
 
-function toPayload(block: api.ChartBlock): types.ChartPayload {
-    return {
-        queryUuid: block.query_uuid,
-        rows: block.rows,
-        fields: block.fields,
-        exploreUrl: block.explore_url,
-        args: block.query_args,
-    };
-}
-
-function draw(payload: types.ChartPayload, vizType: types.VizType, target: HTMLElement): void {
-    echarts.getInstanceByDom(target)?.dispose();
-    target.replaceChildren();
-    let rendered: ReturnType<typeof chart.render>;
-    try {
-        rendered = chart.render(payload, vizType, CHART_SIZE);
-    } catch (error) {
-        // A chart that cannot be drawn must not stop the rest of the conversation rendering.
-        console.error("Chart render failed", { title: payload.args.title, vizType, error });
-        target.textContent = `This chart could not be drawn as ${vizType}: ${describeError(error)}`;
-        target.dataset.kind = "error";
-        return;
-    }
-    if (rendered.kind === "echarts") {
-        echarts.init(target, undefined, CHART_SIZE).setOption(rendered.option);
-    } else if (rendered.kind === "table") {
-        table.renderTable(target, rendered);
-    } else {
-        target.textContent = `Cannot draw this as a chart (${rendered.kind}).`;
-    }
-    target.dataset.kind = rendered.kind;
-}
-
-// Zod errors stringify as a JSON array; name the failing fields instead.
-function describeError(error: unknown): string {
-    const issues = (error as { issues?: { path: (string | number)[]; message: string }[] }).issues;
-    if (!issues) return String(error);
-    return issues.slice(0, 3).map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`).join("; ");
-}
-
-function initialViz(payload: types.ChartPayload): types.VizType {
-    const requested = payload.args.chartConfig?.defaultVizType;
-    return types.VIZ_TYPES.find((viz) => viz === requested) ?? "table";
-}
-
-export function renderCard(block: api.ChartBlock, versions: api.ChartBlock[]): HTMLElement {
-    const card = el("section", "card");
-    card.dataset.artifact = block.artifact_id;
-    let payload = toPayload(block);
-    let vizType = initialViz(payload);
-
-    const heading = el("h3", undefined, `${block.title} · v${block.version}`);
-    const body = el("div", "card-body");
-    const controls = el("div", "controls");
-    const editor = el("div", "editor");
-    editor.hidden = true;
-
-    const select = el("select");
-    for (const viz of types.VIZ_TYPES) select.add(new Option(viz, viz, false, viz === vizType));
-    select.addEventListener("change", () => {
-        vizType = select.value as types.VizType;
-        redraw();
-    });
-
-    const redraw = (): void => {
-        draw(payload, vizType, body);
-    };
-
-    const csvButton = button("CSV", () => {
-        const rendered = chart.render(payload, "table", CHART_SIZE);
-        if (rendered.kind === "table") {
-            download.downloadCsv(`${block.title}.csv`, download.tableToCsv(rendered.model));
-        }
-    });
-    const pngButton = button("PNG", () => {
-        const instance = echarts.getInstanceByDom(body);
-        if (!instance) return;
-        download.saveFile(
-            `${block.title}.png`,
-            instance.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#fff" }),
-        );
-    });
-    const editButton = button("Edit query", () => {
-        editor.hidden = !editor.hidden;
-    });
-    const saveStatus = el("span", "save-status");
-    const saveButton = button("Save", async () => {
-        saveStatus.textContent = "Saving…";
+function saveAction(block: api.ChartBlock): HTMLElement {
+    const status = el("span", "save-status");
+    const save = button("Save", async () => {
+        status.textContent = "Saving…";
         try {
-            const saved = await api.saveChart(payload.args);
+            const saved = await api.saveChart(block.query_args);
             const link = el("a", undefined, "Saved to Lightdash");
             link.href = saved.href;
             link.target = "_blank";
             link.rel = "noopener";
-            saveStatus.replaceChildren(link);
+            status.replaceChildren(link);
         } catch (error) {
-            saveStatus.textContent = String(error);
+            status.textContent = String(error);
         }
     });
-    controls.append(select, csvButton, pngButton, editButton, saveButton, saveStatus);
-
-    // Opens an embedded explore of this query. A bare tab is used here; in Companion it would be a modal.
-    controls.append(
-        button("Explore", async () => {
-            try {
-                window.open(await api.exploreUrl(payload.args), "_blank", "noopener");
-            } catch (error) {
-                alert(String(error));
-            }
-        }),
-    );
-
-    if (versions.length > 1) {
-        const switcher = el("span", "versions");
-        for (const version of versions) {
-            const chip = button(`v${version.version}`, () => {
-                card.replaceWith(renderCard(version, versions));
-            });
-            chip.disabled = version.version === block.version;
-            switcher.append(chip);
-        }
-        controls.append(switcher);
-    }
-
-    // The editor is rebuilt from the latest payload after each run, so its filter list and
-    // field values never describe a query that is no longer showing.
-    const mountEditor = (message: string): void => {
-        editor.replaceChildren();
-        buildEditor(editor, payload, async (next) => {
-            const status = editor.querySelector<HTMLElement>(".status");
-            if (status) status.textContent = "Running…";
-            try {
-                payload = await api.rerunQuery(next);
-                redraw();
-                mountEditor(`Updated · ${payload.rows.length} rows (no LLM call)`);
-            } catch (error) {
-                if (status) status.textContent = String(error);
-            }
-        });
-        const status = editor.querySelector<HTMLElement>(".status");
-        if (status) status.textContent = message;
-    };
-    mountEditor("");
-
-    card.append(heading, controls, editor, body);
-    redraw();
-    return card;
+    const wrapper = el("span", "action");
+    wrapper.append(save, status);
+    return wrapper;
 }
 
-function buildEditor(
-    container: HTMLElement,
-    payload: types.ChartPayload,
-    onRun: (args: types.ChartArgs) => Promise<void>,
-): void {
-    const config = payload.args.queryConfig;
-    const dimensions = el("input");
-    dimensions.value = config.dimensions.join(", ");
-    dimensions.setAttribute("aria-label", "Dimensions");
-    const metrics = el("input");
-    metrics.value = config.metrics.join(", ");
-    metrics.setAttribute("aria-label", "Metrics");
-    const limit = el("input");
-    limit.type = "number";
-    limit.value = String(config.limit ?? 500);
-    limit.setAttribute("aria-label", "Limit");
+// Opens an embedded explore of this query. A bare tab is used here; in Companion it would be a modal.
+function exploreAction(block: api.ChartBlock): HTMLElement {
+    return button("Explore", async () => {
+        try {
+            window.open(await api.exploreUrl(block.query_args), "_blank", "noopener");
+        } catch (error) {
+            alert(String(error));
+        }
+    });
+}
 
-    const split = (value: string): string[] =>
-        value.split(",").map((part) => part.trim()).filter(Boolean);
-    const run = button("Re-run", () => {
-        void onRun({
-            ...payload.args,
-            queryConfig: {
-                ...config,
-                dimensions: split(dimensions.value),
-                metrics: split(metrics.value),
-                limit: Number(limit.value) || null,
-            },
-        });
-    });
-    const labelled = (label: string, input: HTMLElement): HTMLElement => {
-        const wrapper = el("label", undefined, label);
-        wrapper.append(input);
-        return wrapper;
-    };
-    const filterList = el("ul", "filter-list");
-    const active = filters.describeFilters(payload.args);
-    if (active.length === 0) {
-        filterList.append(el("li", "muted", "No filters"));
+async function showApp(block: api.ChartBlock, target: HTMLElement): Promise<void> {
+    if (!block.app_input || !block.app_result) {
+        target.textContent = "This chart has no MCP App result stored.";
+        target.dataset.kind = "error";
+        return;
     }
-    active.forEach((description, index) => {
-        const item = el("li", undefined, description);
-        item.append(
-            button("Remove", () => {
-                void onRun(filters.withoutRule({ ...payload.args, queryConfig: config }, index));
-            }),
-        );
-        filterList.append(item);
-    });
-    container.append(
-        labelled("Filters", filterList),
-        labelled("Dimensions", dimensions),
-        labelled("Metrics", metrics),
-        labelled("Limit", limit),
-        run,
-        el("span", "status"),
-    );
+    try {
+        await mcpApp.mount(target, { input: block.app_input, result: block.app_result });
+    } catch (error) {
+        console.error("MCP App render failed", { title: block.title, error });
+        target.textContent = `The MCP App could not be shown: ${String(error)}`;
+        target.dataset.kind = "error";
+    }
+}
+
+export function renderCard(block: api.ChartBlock): HTMLElement {
+    const card = el("section", "card");
+    card.dataset.artifact = block.artifact_id;
+    const heading = el("h3", undefined, `${block.title} · v${block.version}`);
+    const body = el("div", "card-body");
+    const actions = el("div", "controls");
+    actions.append(saveAction(block), exploreAction(block));
+    card.append(heading, body, actions);
+    void showApp(block, body);
+    return card;
 }

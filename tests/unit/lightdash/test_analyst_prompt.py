@@ -18,12 +18,12 @@ class TestAdapt:
     def test_removes_lines_that_name_tools_the_agent_lacks(self) -> None:
         adapted = analyst_prompt.adapt(prompt=SERVER_PROMPT)
 
-        assert "render_chart" not in adapted
         assert "get_context" not in adapted
         assert "run_sql" not in adapted
 
     def test_keeps_the_guidance_the_agent_can_act_on(self) -> None:
         adapted = analyst_prompt.adapt(prompt=SERVER_PROMPT)
 
+        assert "`render_chart`: render completed metric queries" in adapted
         assert "`get_metadata`: confirm metadata before querying" in adapted
         assert "never guess" in adapted

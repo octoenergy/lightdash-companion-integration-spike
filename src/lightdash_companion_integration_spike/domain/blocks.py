@@ -18,6 +18,8 @@ class ChartBlock(pydantic.BaseModel):
     rows: list[dict[str, object]]
     fields: dict[str, object]
     explore_url: str | None = None
+    app_input: dict[str, object] | None = None
+    app_result: dict[str, object] | None = None
 
 
 class FollowUpsBlock(pydantic.BaseModel):

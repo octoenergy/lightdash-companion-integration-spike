@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 PROMPT_NAME = "lightdash-analyst"
 
 # Tools the spike agent does not expose; their guidance would make the model call tools it lacks.
-UNAVAILABLE_TOOLS = ("run_sql", "render_chart", "list_content", "get_context", "get_query_result")
+UNAVAILABLE_TOOLS = ("run_sql", "list_content", "get_context", "get_query_result")
 
 
 class AnalystPromptEmpty(Exception):

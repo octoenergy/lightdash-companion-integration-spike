@@ -12,17 +12,6 @@ function el<K extends keyof HTMLElementTagNameMap>(
     return node;
 }
 
-function chartsByArtifact(messages: api.Message[]): Map<string, api.ChartBlock[]> {
-    const grouped = new Map<string, api.ChartBlock[]>();
-    for (const message of messages) {
-        for (const block of message.blocks) {
-            if (block.type !== "lightdash_chart") continue;
-            grouped.set(block.artifact_id, [...(grouped.get(block.artifact_id) ?? []), block]);
-        }
-    }
-    return grouped;
-}
-
 export class Chat {
     private threadId: string | null = null;
     private messages: api.Message[] = [];
@@ -75,16 +64,15 @@ export class Chat {
     }
 
     private render(): void {
-        const charts = chartsByArtifact(this.messages);
         this.log.replaceChildren(
-            ...this.messages.map((message) => this.renderMessageSafely(message, charts)),
+            ...this.messages.map((message) => this.renderMessageSafely(message)),
         );
         this.log.scrollTop = this.log.scrollHeight;
     }
 
-    private renderMessageSafely(message: api.Message, charts: Map<string, api.ChartBlock[]>): HTMLElement {
+    private renderMessageSafely(message: api.Message): HTMLElement {
         try {
-            return this.renderMessage(message, charts);
+            return this.renderMessage(message);
         } catch (error) {
             console.error("Message render failed", { id: message.id, error });
             const failed = el("article", `message ${message.role} render-error`);
@@ -93,13 +81,13 @@ export class Chat {
         }
     }
 
-    private renderMessage(message: api.Message, charts: Map<string, api.ChartBlock[]>): HTMLElement {
+    private renderMessage(message: api.Message): HTMLElement {
         const wrapper = el("article", `message ${message.role}`);
         wrapper.dataset.id = message.id;
         for (const block of message.blocks) {
             if (block.type === "markdown") wrapper.append(el("p", undefined, block.text));
             else if (block.type === "lightdash_chart") {
-                wrapper.append(card.renderCard(block, charts.get(block.artifact_id) ?? [block]));
+                wrapper.append(card.renderCard(block));
             } else if (block.type === "follow_ups") {
                 const chips = el("div", "chips");
                 for (const suggestion of block.suggestions) {
